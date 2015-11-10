@@ -1,25 +1,34 @@
 /*==================================================================================================
-PROGRAMMER:			Byron Himes
-COURSE:				CSC 525/625
-MODIFIED BY:		Byron Himes
-LAST MODIFIED DATE:	11/09/2015
+PROGRAMMER:				Byron Himes
+COURSE:					CSC 525/625
+MODIFIED BY:			Byron Himes
+LAST MODIFIED DATE:		11/09/2015
 DESCRIPTION:			Edit 2.5d mesh using keyboad, export to text file
-CONTROLS:				-Right click and drag rotates scene
-						-Left click and drag to move polygon up/down/left/right
-						-CTRL+left click and drag to move forward/back/left/right
-						-'h' to toggle highlight mode (recommend on)
-						-'c' to toggle vertex coloring mode
-							* entire poly coloring not supported currently
-							* use arrow keys to adjust values and switch between RGBA
-						-'n' to place new polygon in current viewing plane
-						-F1 to export openGL code for model to c:\temp\object#.txt
-						-'v' currently alters view mode, but it's not fully functional yet
-						-'d' to DELETE current polygon
-						-'l' to LINK current vertex to a subsequent vertex on ANOTHER polygon
-						-'s' to SWITCH the currently selected polygon
+CONTROLS:				**GENERAL**:
+							-Right click and drag ROTATES scene
+							-Left click and drag to MOVE POLYGON up/down/left/right
+							-CTRL+left click and drag to MOVE forward/back/left/right
+							-'h' to toggle HIGHLIGHT MODE (recommend on)
+							-'n' to place NEW POLYGON in current viewing plane
+							-F1 to EXPORT openGL code for model to c:\temp\object#.txt
+							-'d' to DELETE current polygon
+							-'s' to SWITCH the currently selected polygon
+
+						**LINKING**:	(use common sense)
+							---to LINK current vertex to a subsequent vertex on ANOTHER polygon
+							-Press 'l' to begin link
+							-Press 's' to cycle target polygon
+							-Press space to cycle vertices on that polygon
+							-Press 'l' again to complete the link
+							-Press 'x' to cancel link mode!
+
+						**COLOR EDIT MODE**:
+							-'c' to toggle vertex coloring mode
+							- entire poly coloring not supported currently
+							- use arrow keys to adjust values and switch between RGBA
 
 
-NOTES:					Going to add light toggle
+NOTES:					Going to add light toggle (maybe?)
 
 FILES:					lazymodelr.cpp, structs.h, (*.sln, ...)
 IDE/COMPILER:			MicroSoft Visual Studio 2013
@@ -54,6 +63,8 @@ vector<Poly> poly;
 // current editing polygon and vertex
 int curp = 0;
 int curv = 0;
+int linkp = 0;	// for linking
+int linkv = 0;	// for linking
 
 // keeps track of which color is currently being edited
 int rgba = 0;
@@ -69,8 +80,7 @@ int view_mode = 0;	// 0: normal, 1: top down, 2: bottom up, NOT WORKING YET
 bool highlighting = false;	// toggles color display and faded highlighting
 bool c_edit_mode = false;	// toggles color editing mode (for current point(s))
 bool link_mode = false;		// toggles link mode
-int linkp;
-int linkv;
+
 
 // tracks mouse movement
 int mouse_y = 0;
@@ -154,20 +164,25 @@ void drawHUD(){
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 
-
+	// Rotation Factor information
 	glColor3f(1, 1, 1);
 	glRasterPos2f(-(width / 2) + 1, -(height / 2) + 2.5);
 	drawText("Rotation Factor: ");
 	drawText(to_string(rF));
 
-	glRasterPos2f(-(width / 2) + 1, -(height / 2) + 1);
-	drawText("Export Mode: ");
-	drawText("Full Code");
+	// Link mode info 
+	if (link_mode){
+		glRasterPos2f(-(width / 2) + 1, -(height / 2) + 1);
+		drawText("Target Polygon and Vertex: ");
+		drawText(to_string(linkp) + ", " + to_string(linkv));
+	}
 
+	// selected polygon info
 	glRasterPos2f(-(width / 2) + 1, (height / 2) - 1);
 	drawText("Selected Polygon: ");
 	drawText(to_string(curp));
 
+	// selected vertex info
 	glRasterPos2f(-(width / 2) + 1, (height / 2) - 2.5);
 	drawText("Selected Vertex: ");
 	if (curv == 4)
@@ -175,8 +190,8 @@ void drawHUD(){
 	else
 		drawText(to_string(curv));
 
+	// Color info to follow:
 	if (poly.size() > 0){
-		// Color info to follow:
 		glRasterPos2f(-(width / 2) + 1, (height / 2) - 4);
 		drawText("Color Information:");
 
@@ -185,7 +200,6 @@ void drawHUD(){
 			glColor3f(0, 0, 0);
 		else
 			glColor3f(1, 1, 1);
-
 
 		// Red
 		if (c_edit_mode && rgba == 0)
@@ -475,20 +489,23 @@ void drawScene(){
 		glBegin(GL_POLYGON);
 		for (int j = 0; j < 4; j++){	// FOR EACH EDGE OF CUR. POLYGON:
 			if (highlighting){	// use highlighting if it's turned on
-				if (curv == j && curp == i){
-					glColor4f(1, 0, 0, 0.6);
+				if (curv == j && curp == i){	// does this if only a single vtx is selected
+					glColor4f(1, 0, 0, 0.6);	// highlight selected vertex red
 				}
 				else if (curv != j && curv != 4) {
-					glColor4f(1, 1, 1, 0.3);
+					glColor4f(1, 1, 1, 0.3);	// highlight nonselected polygons white
 				}
 			}
 			else{
 				glColor4f(	// use actual vertex color if highlighting is off
-					poly[i].v[j].c[0], 
-					poly[i].v[j].c[1], 
-					poly[i].v[j].c[2], 
-					poly[i].v[j].c[3]
+					poly[i].v[j].c[0],	// r
+					poly[i].v[j].c[1],	// g
+					poly[i].v[j].c[2],	// b
+					poly[i].v[j].c[3]	// a
 				);
+			}
+			if (link_mode && i == linkp && j == linkv){
+				glColor4f(0, 0, 1, 0.6);	// highlight link-target vertex blue
 			}
 			glVertex3f(poly[i].v[j].x, poly[i].v[j].y, poly[i].v[j].z);
 		}
@@ -499,7 +516,7 @@ void drawScene(){
 	// Highlight current vertex of current polygon
 	if (poly.size() > 0){
 		glColor4f(1, 0, 0, 1);
-		glPointSize(2);
+		glPointSize(4);
 
 		// If only a single vertex is selected...
 		if (curv != 4){
@@ -516,10 +533,20 @@ void drawScene(){
 			glVertex3f(poly[curp].v[3].x, poly[curp].v[3].y, poly[curp].v[3].z);
 			glEnd();
 		}
+
+		// draws a blue dot for link-target vertex
+		if (link_mode){
+			glColor4f(0, 0, 1, 1);
+			glBegin(GL_POINTS);
+			glVertex3f(poly[linkp].v[linkv].x, poly[linkp].v[linkv].y, poly[linkp].v[linkv].z);
+			glEnd();
+		}
 	}
 
+	// Draw the hud information
 	drawHUD();
 
+	// swap buffers
 	glutSwapBuffers();
 	glFlush(); // flush out the buffer contents
 }
@@ -608,47 +635,68 @@ void normKeys(unsigned char key, int x, int y){
 	}
 	if (key == ' '){
 		// code to change vertex of current polygon
-		curv = (curv + 1) % 5;
+		if (link_mode){	// if in link mode, change TARGET vertex
+			linkv = (linkv + 1) % 4; // unable to select whole poly in link mode
+		} else {
+			curv = (curv + 1) % 5;	 // normal vtx switching
+		}
 	}
 	if (key == 's'){
 		// code to Switch current polygon
-		curp = (curp + 1) % poly.size();
+		if (link_mode){	// if linking vertices...
+			linkp = (linkp + 1) % poly.size();
+			if (linkp == curp)	// target polygon can't equal cur. poly.
+				linkp = (linkp + 1) % poly.size();
+		} 
+		else{
+			curp = (curp + 1) % poly.size();
+		}
 	}
-	if (key == 'v'){
+	if (key == 'v'){ // still gotta fix this shit
 		view_mode = (view_mode + 1) % 3;
 	}
-	if (key == 'h'){
-		if (highlighting){
+	if (key == 'h' && !link_mode){ // can't tog highlight in link mode
+		if (highlighting)
 			highlighting = false;
-		}
 		else{
 			highlighting = true;
+			c_edit_mode = false; // if highlight tog'd on, exit color edit mode
 		}
 	}
-	if (key == 'c'){
-		if (c_edit_mode){
+	if (key == 'c' && !link_mode){	// can't enter c_edit while linking
+		if (c_edit_mode)
 			c_edit_mode = false;
-		}
 		else{
 			c_edit_mode = true;
+			highlighting = false; // highlight mode yields to color edit mode
 		}
 	}
-	if (key == 'd' && poly.size() > 0){
+	if (key == 'd' && poly.size() > 0 && !link_mode){	// don't delete in link mode
+		// press 'd' to DELETE selected polygon
 		poly.erase(poly.begin() + curp);
 		curp -= 1;
 		if (curp < 0)
 			curp = 0;
 	}
-	if (key == 'l' && curv != 4 && poly.size()){
-		if (!link_mode){
-			link_mode = true;
-			// finish
+	if (key == 'l' && curv != 4 && poly.size() > 2){ // need at least 2 polygons for link
+		if (!link_mode){	// starting a link
+			link_mode = true;					// initiate link mode
+			highlighting = true;				// turn on highlighting
+			c_edit_mode = false;				// turn off color edit
+			linkp = (curp + 1) % poly.size();	// linkp is the target polygon
+			linkv = 0;							// linkv is the target vertex
 		}
-		else if (link_mode){
-			link_mode = false;
-			// finish and put code for secondary highlighting in the drawScene function
+		else if (link_mode){	// completing a link
+			link_mode = false;	// exit link mode
+			if (linkp != curp){	// only link if different polygon is selected as target
+				poly[curp].v[curv].x = poly[linkp].v[linkv].x;	// link x
+				poly[curp].v[curv].y = poly[linkp].v[linkv].y;	// link y 
+				poly[curp].v[curv].z = poly[linkp].v[linkv].z;	// link z
+			}
 		}
-
+	}
+	if (key == 'x' && link_mode){
+		link_mode = false;	// used to cancel link mode
 	}
 
 
@@ -821,7 +869,7 @@ void main(int argc, char ** argv){
 	glutInit(& argc, argv);
 	glutInitWindowSize(1200, 900);
 	glutInitWindowPosition(100, 0);
-	glutCreateWindow("-- Model Editor --");
+	glutCreateWindow("-- lazy modelr --");
 	glutInitDisplayMode(GLUT_DOUBLE);
 	init();
 	reset();
