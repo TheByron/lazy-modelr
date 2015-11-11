@@ -722,17 +722,79 @@ void mouseClick(int button, int state, int x, int y){
 
 void mouseDrag(int x, int y){
 	// for rotating scene
-	if (mouse_use == 2){	
+	if (mouse_use == 2 && !ctrl_on){	
 		if (x > mouse_x && mouse_use == 2){
 			rF += 0.9f;
 			if (rF >= 360){
 				rF = 0;
 			}
 		}
-		else if (x < mouse_x && mouse_use == 2){
+		else if (x < mouse_x && mouse_use == 2 && !ctrl_on){
 			rF -= 0.9f;
 			if (rF < 0){
 				rF = 359;
+			}
+		}
+	}
+	else if (mouse_use == 2 && ctrl_on && curp == 4 && !link_mode){
+		// can only rotate entire polygons and only outside link mode
+		if (rF < 45 || rF > 315){ // 'normal' view rotation
+			if (x > mouse_x){
+				// rotate 
+			}
+			else if (x < mouse_x){
+				
+			}
+			if (y < mouse_y){
+				
+			}
+			else if (y > mouse_y){
+				
+			}
+		}
+
+		if (rF < 135 && rF > 45){	// 'left' view obj rotation
+			if (x > mouse_x){
+				
+			}
+			else if (x < mouse_x){
+				
+			}
+			if (y < mouse_y){
+				
+			}
+			else if (y > mouse_y){
+				
+			}
+		}
+
+		if (rF < 225 && rF > 135){ // '180 degree view' obj rotation
+			if (x > mouse_x){
+
+			}
+			else if (x < mouse_x){
+
+			}
+			if (y < mouse_y){
+				
+			}
+			else if (y > mouse_y){
+
+			}
+		}
+
+		if (rF < 315 && rF > 225){ // 'right' view object rotation
+			if (x > mouse_x){
+				
+			}
+			else if (x < mouse_x){
+
+			}
+			if (y < mouse_y){
+
+			}
+			else if (y > mouse_y){
+
 			}
 		}
 	}

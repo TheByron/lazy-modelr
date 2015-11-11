@@ -10,3 +10,5 @@ typedef struct vec3{
 typedef struct Poly{
 	vec3 v[4];		// vertices info
 } Poly;
+
+
