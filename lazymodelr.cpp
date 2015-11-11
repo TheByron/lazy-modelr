@@ -151,6 +151,32 @@ void drawText(string s){
 	glEnd();
 }
 
+void rotate(GLfloat m[4][4]){
+	for (int i = 0; i < 4; i++){
+		double newX = 0;
+		double newY = 0;
+		double newZ = 0;
+		newX += m[0][0] * poly[curp].v[i].x;
+		newX += m[0][1] * poly[curp].v[i].y;
+		newX += m[0][2] * poly[curp].v[i].z;
+		newX += m[0][3];
+
+		newY += m[1][0] * poly[curp].v[i].x;
+		newY += m[1][1] * poly[curp].v[i].y;
+		newY += m[1][2] * poly[curp].v[i].z;
+		newY += m[1][3];
+
+		newZ += m[2][0] * poly[curp].v[i].x;
+		newZ += m[2][1] * poly[curp].v[i].y;
+		newZ += m[2][2] * poly[curp].v[i].z;
+		newZ += m[2][3];
+
+		poly[curp].v[i].x = newX;
+		poly[curp].v[i].y = newY;
+		poly[curp].v[i].z = newZ;
+	}
+}
+
 void drawHUD(){
 	glDisable(GL_LIGHTING);
 	glClear(GL_DEPTH_BUFFER_BIT);
@@ -722,7 +748,7 @@ void mouseClick(int button, int state, int x, int y){
 
 void mouseDrag(int x, int y){
 	// for rotating scene
-	if (mouse_use == 2 && !ctrl_on){	
+	if (mouse_use == 2 && !ctrl_on){
 		if (x > mouse_x && mouse_use == 2){
 			rF += 0.9f;
 			if (rF >= 360){
@@ -736,30 +762,31 @@ void mouseDrag(int x, int y){
 			}
 		}
 	}
-	else if (mouse_use == 2 && ctrl_on && curp == 4 && !link_mode){
-		// can only rotate entire polygons and only outside link mode
+	else if (mouse_use == 2 && ctrl_on && !link_mode){
+		// ^^can only rotate entire polygons and only outside link mode
+
+		// y rotation will be the same regardless of orientation
+		if (x > mouse_x){
+			// rotate positive y
+			rotate(RYp);
+			drawScene();
+		}
+		else if (x < mouse_x){
+			// rotate negative y
+			rotate(RYn);
+			drawScene();
+		}
+
 		if (rF < 45 || rF > 315){ // 'normal' view rotation
-			if (x > mouse_x){
-				// rotate 
-			}
-			else if (x < mouse_x){
-				
-			}
 			if (y < mouse_y){
-				
+				//rotate(RXn);
 			}
 			else if (y > mouse_y){
-				
+				//rotate(RXp);
 			}
 		}
 
 		if (rF < 135 && rF > 45){	// 'left' view obj rotation
-			if (x > mouse_x){
-				
-			}
-			else if (x < mouse_x){
-				
-			}
 			if (y < mouse_y){
 				
 			}
@@ -769,12 +796,6 @@ void mouseDrag(int x, int y){
 		}
 
 		if (rF < 225 && rF > 135){ // '180 degree view' obj rotation
-			if (x > mouse_x){
-
-			}
-			else if (x < mouse_x){
-
-			}
 			if (y < mouse_y){
 				
 			}
@@ -784,12 +805,6 @@ void mouseDrag(int x, int y){
 		}
 
 		if (rF < 315 && rF > 225){ // 'right' view object rotation
-			if (x > mouse_x){
-				
-			}
-			else if (x < mouse_x){
-
-			}
 			if (y < mouse_y){
 
 			}
