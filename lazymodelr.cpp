@@ -2,8 +2,8 @@
 PROGRAMMER:				Byron Himes
 COURSE:					CSC 525/625
 MODIFIED BY:			Byron Himes
-LAST MODIFIED DATE:		11/09/2015
-DESCRIPTION:			Edit 2.5d mesh using keyboad, export to text file
+LAST MODIFIED DATE:		11/11/2015
+DESCRIPTION:			Create and alter polygons, export OpenGL code to text file
 CONTROLS:				**GENERAL**:
 							-Right click and drag ROTATES scene
 							-Left click and drag to MOVE POLYGON up/down/left/right
@@ -26,6 +26,11 @@ CONTROLS:				**GENERAL**:
 							-'c' to toggle vertex coloring mode
 							- entire poly coloring not supported currently
 							- use arrow keys to adjust values and switch between RGBA
+
+						**ROTATION**
+							-Press CTRL + right mouse drag to rotate about Y axis
+							-Press SHIFT + right mouse drag to rotate about *relative* horizontal (X)
+							-Press ALT + right mouse drag to rotate about *relative* central (Z)
 
 
 NOTES:					Going to add light toggle (maybe?)
@@ -76,6 +81,8 @@ string ext = ".txt";
 
 // toggles
 bool ctrl_on = false;	// tracks ctrl key status
+bool shift_on = false;	// tracks shift key status
+bool alt_on = false;	// tracks alt key status
 int view_mode = 0;	// 0: normal, 1: top down, 2: bottom up, NOT WORKING YET
 bool highlighting = false;	// toggles color display and faded highlighting
 bool c_edit_mode = false;	// toggles color editing mode (for current point(s))
@@ -704,7 +711,7 @@ void normKeys(unsigned char key, int x, int y){
 		if (curp < 0)
 			curp = 0;
 	}
-	if (key == 'l' && curv != 4 && poly.size() > 2){ // need at least 2 polygons for link
+	if (key == 'l' && curv != 4 && poly.size() >= 2){ // need at least 2 polygons for link
 		if (!link_mode){	// starting a link
 			link_mode = true;					// initiate link mode
 			highlighting = true;				// turn on highlighting
@@ -738,24 +745,30 @@ void mouseClick(int button, int state, int x, int y){
 		mouse_use = 1;
 		mouse_x = x;
 	}
-	if (glutGetModifiers() == GLUT_ACTIVE_CTRL){
+	if (glutGetModifiers() == GLUT_ACTIVE_CTRL)
 		ctrl_on = true;
-	}
-	else {
+	else 
 		ctrl_on = false;
-	}
+	if (glutGetModifiers() == GLUT_ACTIVE_SHIFT)
+		shift_on = true;
+	else
+		shift_on = false;
+	if (glutGetModifiers() == GLUT_ACTIVE_ALT)
+		alt_on = true;
+	else
+		alt_on = false;
 }
 
 void mouseDrag(int x, int y){
 	// for rotating scene
-	if (mouse_use == 2 && !ctrl_on){
+	if (mouse_use == 2 && !ctrl_on && !shift_on && !alt_on){
 		if (x > mouse_x && mouse_use == 2){
 			rF += 0.9f;
 			if (rF >= 360){
 				rF = 0;
 			}
 		}
-		else if (x < mouse_x && mouse_use == 2 && !ctrl_on){
+		else if (x < mouse_x && mouse_use == 2){
 			rF -= 0.9f;
 			if (rF < 0){
 				rF = 359;
@@ -764,7 +777,6 @@ void mouseDrag(int x, int y){
 	}
 	else if (mouse_use == 2 && ctrl_on && !link_mode){
 		// ^^can only rotate entire polygons and only outside link mode
-
 		// y rotation will be the same regardless of orientation
 		if (x > mouse_x){
 			// rotate positive y
@@ -776,40 +788,79 @@ void mouseDrag(int x, int y){
 			rotate(RYn);
 			drawScene();
 		}
-
+	}
+	else if (mouse_use == 2 && shift_on && !link_mode){
 		if (rF < 45 || rF > 315){ // 'normal' view rotation
 			if (y < mouse_y){
-				//rotate(RXn);
+				rotate(RXn);
 			}
 			else if (y > mouse_y){
-				//rotate(RXp);
+				rotate(RXp);
 			}
 		}
 
 		if (rF < 135 && rF > 45){	// 'left' view obj rotation
 			if (y < mouse_y){
-				
+				rotate(RZn);
 			}
 			else if (y > mouse_y){
-				
+				rotate(RZp);
 			}
 		}
 
 		if (rF < 225 && rF > 135){ // '180 degree view' obj rotation
 			if (y < mouse_y){
-				
+				rotate(RXp);
 			}
 			else if (y > mouse_y){
-
+				rotate(RXn);
 			}
 		}
 
 		if (rF < 315 && rF > 225){ // 'right' view object rotation
 			if (y < mouse_y){
-
+				rotate(RZp);
 			}
 			else if (y > mouse_y){
+				rotate(RZn);
+			}
+		}
+	}
+	else if (mouse_use == 2 && alt_on && !link_mode){
+		// Handles side to side rotation ("cartwheels")
+		if (rF < 45 || rF > 315){ // 'normal' view rotation
+			if (x < mouse_x){
+				rotate(RZp);
+			}
+			else if (x > mouse_x){
+				rotate(RZn);
+			}
+		}
 
+		if (rF < 135 && rF > 45){	// 'left' view obj rotation
+			if (x < mouse_x){
+				rotate(RXn);
+			}
+			else if (x > mouse_x){
+				rotate(RXp);
+			}
+		}
+
+		if (rF < 225 && rF > 135){ // '180 degree view' obj rotation
+			if (x < mouse_x){
+				rotate(RZn);
+			}
+			else if (x > mouse_x){
+				rotate(RZp);
+			}
+		}
+
+		if (rF < 315 && rF > 225){ // 'right' view object rotation
+			if (x < mouse_x){
+				rotate(RXp);
+			}
+			else if (x > mouse_x){
+				rotate(RXn);
 			}
 		}
 	}
